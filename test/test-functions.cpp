@@ -291,6 +291,8 @@ TEST_CASE("combinations") {
   data["brother"]["daughter0"] = {{"name", "Maria"}};
   data["is_happy"] = true;
   data["list_of_objects"] = {{{"a", 2}}, {{"b", 3}}, {{"c", 4}}, {{"d", 5}}};
+  data["bob_newlines"] = " \n\t   \n Bob \n \t\t      ";
+  data["multiline"] = "first\nsecond\n\nthird\n\n";
 
   CHECK(env.render("{% if upper(\"Peter\") == \"PETER\" %}TRUE{% endif %}", data) == "TRUE");
   CHECK(env.render("{% if lower(upper(name)) == \"peter\" %}TRUE{% endif %}", data) == "TRUE");
@@ -308,4 +310,32 @@ TEST_CASE("combinations") {
   CHECK(env.render("{{ not (true) }}", data) == "false");
   CHECK(env.render("{{ true or (true or true) }}", data) == "true");
   CHECK(env.render("{{ at(list_of_objects, 1).b }}", data) == "3");
+
+  CHECK(env.render("{% if trim(\"   Bob \") == \"Bob\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if trim(\"Bob\") == \"Bob\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if trim(bob_newlines) == \"Bob\" %}TRUE{% endif %}", data) == "TRUE");
+
+  CHECK(env.render("{% if replace(\"Bob is tall\", \"tall\", \"short\") == \"Bob is short\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if replace(\"Bob is tall\", \"high\", \"short\") == \"Bob is tall\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if replace(\"Bob is tall\", \"is \", \"\") == \"Bob tall\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if replace(\"\", \"tall\", \"short\") == \"\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if replace(\"\", \"\", \"\") == \"\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if replace(\"Bob\", \"\", \"\") == \"Bob\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if replace(multiline, \"\\n+\", \" \") == \"first second third\" %}TRUE{% endif %}", data) == "TRUE");
+
+  CHECK(env.render("{% if substr(\"onetwothree\", 0, 3) == \"one\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if substr(\"onetwothree\", 3, 3) == \"two\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if substr(\"onetwothree\", 6, 5) == \"three\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if substr(\"onetwothree\", 0, 0) == \"\" %}TRUE{% endif %}", data) == "TRUE");
+
+  CHECK(env.render("{% if at(split(multiline, \"\\n\"), 0) == \"first\" %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if split(multiline, \"\\n\") == [\"first\", \"second\", \"third\"] %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if split(multiline, \"\\n\") == [\"first\", \"second\", \"third\"] %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if split(\"oneoneone\", \"one\") == [\"oneoneone\"] %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if split(\"oneoneone\", \"two\") == [\"oneoneone\"] %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if split(\"\", \"one\") == [] %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if split(\"oneoneone\", \"\") == [\"oneoneone\"] %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% if split(\"oneoneone\", \"two\") == [\"oneoneone\"] %}TRUE{% endif %}", data) == "TRUE");
+  CHECK(env.render("{% for line in split(multiline, \"\\n\") %}{{ line }}{% endfor %}", data) == "firstsecondthird");
+  CHECK(env.render("{{ join(split(multiline, \"\\n\"), \";\") }}", data) == "first;second;third");
 }

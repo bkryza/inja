@@ -12,6 +12,8 @@
 namespace inja {
 
 namespace string_view {
+const std::string WHITESPACE = " \n\r\t\f\v";
+
 inline std::string_view slice(std::string_view view, size_t start, size_t end) {
   start = std::min(start, view.size());
   end = std::min(std::max(start, end), view.size());
@@ -28,6 +30,53 @@ inline std::pair<std::string_view, std::string_view> split(std::string_view view
 
 inline bool starts_with(std::string_view view, std::string_view prefix) {
   return (view.size() >= prefix.size() && view.compare(0, prefix.size(), prefix) == 0);
+}
+
+inline std::string ltrim(std::string_view s) {
+  size_t start = s.find_first_not_of(WHITESPACE);
+  return (start == std::string::npos) ? "" : std::string {s.substr(start)};
+}
+
+std::string rtrim(std::string_view s) {
+  size_t end = s.find_last_not_of(WHITESPACE);
+  return (end == std::string::npos) ? "" : std::string {s.substr(0, end + 1)};
+}
+
+std::string trim(std::string_view s) {
+  auto left_trimmed = ltrim(s);
+  auto trimmed = rtrim(left_trimmed);
+  return trimmed;
+}
+
+std::vector<std::string> split_all(std::string_view s, std::string_view separator) {
+  std::vector<std::string> result;
+
+  std::string_view str{s};
+
+  if(s.empty())
+    return {};
+
+  if(separator.empty()) {
+    return {std::string{s}};
+  }
+
+  while (str.size()) {
+    auto index = str.find(separator);
+    if (index != std::string::npos) {
+      if(index > 0)
+        result.push_back(std::string{str.substr(0, index)});
+      str = str.substr(index + separator.size());
+    } else {
+      if (!str.empty())
+        result.push_back(std::string{str});
+      str = "";
+    }
+  }
+
+  if (result.empty())
+    result.push_back(std::string{s});
+
+  return result;
 }
 } // namespace string_view
 

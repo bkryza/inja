@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <regex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -215,7 +216,10 @@ class Renderer : public NodeVisitor {
     } break;
     case Op::In: {
       const auto args = get_arguments<2>(node);
-      make_result(std::find(args[1]->begin(), args[1]->end(), *args[0]) != args[1]->end());
+      if (get_arguments<2>(node)[0]->is_object())
+        make_result(args[1]->find(*args[0]) != args[1]->end());
+      else
+        make_result(std::find(args[1]->begin(), args[1]->end(), *args[0]) != args[1]->end());
     } break;
     case Op::Equal: {
       const auto args = get_arguments<2>(node);
@@ -392,6 +396,28 @@ class Renderer : public NodeVisitor {
     case Op::Upper: {
       std::string result = get_arguments<1>(node)[0]->get<std::string>();
       std::transform(result.begin(), result.end(), result.begin(), ::toupper);
+      make_result(std::move(result));
+    } break;
+    case Op::Trim: {
+      std::string result = string_view::trim(get_arguments<1>(node)[0]->get<std::string>());
+      make_result(std::move(result));
+    } break;
+    case Op::Replace: {
+      auto args = get_arguments<3>(node);
+      std::string result = args[0]->get<std::string>();
+      std::regex newlines_regex(args[1]->get<std::string>());
+      result = std::regex_replace(result, newlines_regex, args[2]->get<std::string>());
+      make_result(std::move(result));
+    } break;
+    case Op::Split: {
+      auto args = get_arguments<2>(node);
+      std::string input = args[0]->get<std::string>();
+      auto result = string_view::split_all(args[0]->get<std::string>(), args[1]->get<std::string>());
+      make_result(std::move(result));
+    } break;
+    case Op::SubStr: {
+      auto args = get_arguments<3>(node);
+      std::string result = args[0]->get<std::string>().substr(args[1]->get<size_t>(), args[2]->get<size_t>());
       make_result(std::move(result));
     } break;
     case Op::IsBoolean: {
